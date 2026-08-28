@@ -1,0 +1,57 @@
+name: Claude Issue Triage
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code for Issue Triage
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            ISSUE NUMBER: ${{ github.event.issue.number }}
+            TITLE: ${{ github.event.issue.title }}
+            BODY:
+            ${{ github.event.issue.body }}
+
+            Este es el proyecto claude-tetris: un Tetris en JavaScript vanilla sin build
+            tooling (index.html, style.css, game.js — sin package.json ni framework).
+
+            Analiza el issue y haz lo siguiente:
+
+            1. Determina el tipo de issue (bug, mejora/feature, pregunta, mantenimiento).
+            2. Evalúa su prioridad (critical, high, medium, low).
+            3. Revisa las labels existentes con `gh label list`. Reutilízalas si aplican;
+               si ninguna encaja, crea una nueva con `gh label create <nombre> --color <hex> --description "..."`
+               antes de asignarla.
+            4. Aplica las labels correspondientes con `gh issue edit ${{ github.event.issue.number }} --add-label "..."`.
+               Si el issue fue editado y cambió de naturaleza, quita con `--remove-label` las
+               labels de tipo/prioridad que ya no correspondan.
+            5. Publica (o actualiza) un diagnóstico general como comentario:
+               - Intenta primero `gh issue comment ${{ github.event.issue.number }} --edit-last --body "..."`
+                 para actualizar tu comentario de diagnóstico anterior si ya existe.
+               - Si falla porque no hay un comentario previo tuyo, créalo con
+                 `gh issue comment ${{ github.event.issue.number }} --body "..."`.
+               El comentario debe incluir: resumen del problema, causa raíz probable o área
+               del código afectada (menciona archivo/función relevante en game.js si aplica),
+               y pasos sugeridos de alto nivel para abordarlo — sin implementar la solución.
+
+            No modifiques el título ni el cuerpo del issue. No hagas cambios de código ni commits.
+
+          claude_args: |
+            --allowedTools "Bash(gh issue view:*),Bash(gh issue edit:*),Bash(gh issue comment:*),Bash(gh label list:*),Bash(gh label create:*)"
