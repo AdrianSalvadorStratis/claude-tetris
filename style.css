@@ -15,7 +15,17 @@ body {
   user-select: none;
 }
 
-.wrapper {
+.game-title {
+  margin-bottom: 16px;
+  text-align: center;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 6px;
+  color: #7dd3fc;
+  text-shadow: 0 0 20px rgba(125, 211, 252, 0.4);
+}
+
+.board-area {
   position: relative;
 }
 
